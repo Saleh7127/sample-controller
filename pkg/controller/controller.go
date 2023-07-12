@@ -210,12 +210,16 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	deploymentName := uban.Name + "-" + uban.Spec.Name
+	var deploymentName string
+
 	if uban.Spec.Name == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
 		// the resource will be queued again.
-		deploymentName = uban.Name + "-" + "random-name"
+		deploymentName = fmt.Sprintf("%s-%s", uban.Name, controllerv1.RandomName)
+
+	} else {
+		deploymentName = fmt.Sprintf("%s-%s", uban.Name, uban.Spec.Name)
 	}
 
 	// Get the deployment with the name specified in Uban.spec
@@ -224,6 +228,9 @@ func (c *Controller) syncHandler(key string) error {
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
 		deployment, err = c.kubeclientset.AppsV1().Deployments(uban.Namespace).Create(context.TODO(), newDeployment(uban, deploymentName), metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item, so we can
@@ -257,7 +264,7 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	serviceName := deploymentName + "-service"
+	serviceName := fmt.Sprintf("%s-%s", deploymentName, controllerv1.Service)
 	//check is service already exist or not
 	service, err := c.kubeclientset.CoreV1().Services(uban.Namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {

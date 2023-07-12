@@ -12,6 +12,20 @@ import (
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the Uban resource that 'owns' it.
 
+func CheckPort(port int32) int32 {
+	if port == 0 {
+		port = 3005
+	}
+	return port
+}
+
+func CheckImage(image string) string {
+	if image == "" {
+		image = controllerv1.DockerImage
+	}
+	return image
+}
+
 func newDeployment(uban *controllerv1.Uban, deploymentName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -19,8 +33,8 @@ func newDeployment(uban *controllerv1.Uban, deploymentName string) *appsv1.Deplo
 			Namespace: uban.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: "saleh.dev/v1alpha1",
-					Kind:       "Uban",
+					APIVersion: controllerv1.GroupVersion,
+					Kind:       controllerv1.UBAN,
 					Name:       uban.Name,
 					UID:        uban.UID,
 					Controller: func() *bool {
@@ -47,12 +61,12 @@ func newDeployment(uban *controllerv1.Uban, deploymentName string) *appsv1.Deplo
 					Containers: []corev1.Container{
 						{
 							Name:  uban.Name,
-							Image: uban.Spec.Container.Image,
+							Image: CheckImage(uban.Spec.Container.Image),
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "http",
+									Name:          controllerv1.HTTP,
 									Protocol:      corev1.ProtocolTCP,
-									ContainerPort: uban.Spec.Container.Port,
+									ContainerPort: CheckPort(uban.Spec.Container.Port),
 								},
 							},
 						},
@@ -69,12 +83,12 @@ func newService(uban *controllerv1.Uban, service string) *corev1.Service {
 	}
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "Service",
+			Kind: controllerv1.KindService,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: service,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(uban, controllerv1.SchemeGroupVersion.WithKind("Uban")),
+				*metav1.NewControllerRef(uban, controllerv1.SchemeGroupVersion.WithKind(controllerv1.UBAN)),
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -82,9 +96,9 @@ func newService(uban *controllerv1.Uban, service string) *corev1.Service {
 			Selector: labels,
 			Ports: []corev1.ServicePort{
 				{
-					Port:       uban.Spec.Container.Port,
-					TargetPort: intstr.FromInt(int(uban.Spec.Container.Port)),
-					Protocol:   "TCP",
+					Port:       CheckPort(uban.Spec.Container.Port),
+					TargetPort: intstr.FromInt(int(CheckPort(uban.Spec.Container.Port))),
+					Protocol:   controllerv1.TCP,
 				},
 			},
 		},

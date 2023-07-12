@@ -55,7 +55,7 @@ func NewController(
 		deploymentsSynced: deploymentInformer.Informer().HasSynced,
 		ubanLister:        ubanInformer.Lister(),
 		ubanSynced:        ubanInformer.Informer().HasSynced,
-		workQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Uban"),
+		workQueue:         workqueue.NewRateLimitingQueueWithConfig(workqueue.DefaultControllerRateLimiter(), workqueue.RateLimitingQueueConfig{}),
 	}
 	log.Println("Setting up event Handlers")
 
@@ -131,8 +131,8 @@ func (c *Controller) runWorker() {
 }
 
 func (c *Controller) ProcessNextItem() bool {
-	obj, shutdown := c.workQueue.Get()
 
+	obj, shutdown := c.workQueue.Get()
 	if shutdown {
 		return false
 	}
@@ -299,6 +299,7 @@ func (c *Controller) updateUbanStatus(uban *controllerv1.Uban, deployment *appsv
 	// we must use Update instead of UpdateStatus to update the Status block of the Uban resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
+
 	_, err := c.sampleclientset.SalehV1alpha1().Ubans(uban.Namespace).Update(context.TODO(), ubanCopy, metav1.UpdateOptions{})
 	return err
 }

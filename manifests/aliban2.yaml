@@ -3,7 +3,7 @@ kind: Uban
 metadata:
   name: aliban2
 spec:
-  name: aliban1-deploy
+  name:
   replicas: 2
   container:
     image: saleh7127/go-api-server

@@ -8,10 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// newDeployment creates a new Deployment for a Uban resource. It also sets
-// the appropriate OwnerReferences on the resource so handleObject can discover
-// the Uban resource that 'owns' it.
-
 func CheckPort(port int32) int32 {
 	if port == 0 {
 		port = 3005
@@ -25,6 +21,10 @@ func CheckImage(image string) string {
 	}
 	return image
 }
+
+// newDeployment creates a new Deployment for a Uban resource. It also sets
+// the appropriate OwnerReferences on the resource so handleObject can discover
+// the Uban resource that 'owns' it.
 
 func newDeployment(uban *controllerv1.Uban, deploymentName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
